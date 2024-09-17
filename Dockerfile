@@ -1,21 +1,25 @@
-# Use the official Windows Server Core base image
-FROM mcr.microsoft.com/windows/servercore:ltsc2022
+# Use Ubuntu 22.04 as the base image
+FROM ubuntu:22.04
 
-LABEL maintainer="wingnut0310 <wingnut0310@gmail.com>"
+# Install necessary packages
+RUN apt-get update && \
+    apt-get install -y curl unzip && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Install necessary features (like RDP and other server roles)
-RUN powershell -Command \
-    Add-WindowsFeature RDS-RD-Server
+# Install Node.js (required for Code Server)
+RUN curl -fsSL https://deb.nodesource.com/setup_14.x | bash - && \
+    apt-get install -y nodejs
 
-# Set RDP to be enabled
-RUN powershell -Command \
-    Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+# Install Code Server
+RUN curl -fsSL https://code-server.dev/install.sh | sh
 
-# Set Administrator password (change to a strong password)
-RUN net user Administrator "root"
 
-# Expose RDP port
-EXPOSE 3389
 
-# Start PowerShell session on container startup
-CMD ["powershell"]
+# Expose port for Code Server
+EXPOSE 8080
+
+
+
+# Start Code Server with customizations and Blue Light Theme
+CMD ["code-server", "--auth", "none", "--host", "0.0.0.0", "--bind-addr", "0.0.0.0:8080"]
